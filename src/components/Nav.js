@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 
 const Nav = () => {
   const [show, setShow] = useState(false);
@@ -11,7 +11,9 @@ const Nav = () => {
   const auth = getAuth();
   const provider = new GoogleAuthProvider();
 
-  const [userData, setUserData] = useState({});
+  const initialUserData = localStorage.getItem("userData") ? JSON.parse(localStorage.getItem("userData")) : {};
+
+  const [userData, setUserData] = useState(initialUserData);
 
   useEffect(() => {
     onAuthStateChanged(auth, (user) => {
@@ -50,6 +52,19 @@ const Nav = () => {
     signInWithPopup(auth, provider)
       .then((result) => {
         setUserData(result.user);
+        localStorage.setItem("userData", JSON.stringify(result.user));
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  const handleSignOut = () => {
+    signOut(auth)
+      .then(() => {
+        setUserData({});
+        navigate("/");
+        // localStorage.removeItem("userData");
       })
       .catch((error) => {
         console.log(error);
@@ -77,7 +92,7 @@ const Nav = () => {
           <SignOut>
             <UserImg src={userData.photoURL} alt={userData.displayName}/>
             <DropDown>
-              <span>Sign out</span>
+              <span onClick={handleSignOut}>Sign out</span>
             </DropDown>
           </SignOut>
         </>
@@ -88,11 +103,44 @@ const Nav = () => {
 
 export default Nav;
 
-const SignOut = styled.div``;
+const DropDown = styled.div`
+  position: absolute;
+  top: 48px;
+  right: 0px;
+  background: rgb(19, 19, 19);
+  border: 1px solid rgba(151, 151, 151, 0.34);
+  border-radius: 4px;
+  box-shadow: rgb(0, 0, 0 / 50%) 0px 0px 18px 0px;
+  padding: 10px;
+  font-size: 14px;
+  letter-spacing: 4px;
+  width: 100%;
+  opacity: 0;
+  text-align: center;
+`;
 
-const UserImg = styled.div``;
+const SignOut = styled.div`
+  position: relative;
+  height: 48px;
+  width: 48px;
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
 
-const DropDown = styled.div``;
+  &:hover {
+    ${DropDown} {
+      opacity: 1;
+      transition-duration: 1s;
+    }
+  }
+`;
+
+const UserImg = styled.img`
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+`;
 
 const Login = styled.a`
   background-color: rgba(0, 0, 0, 0.6);
